@@ -38,16 +38,9 @@ A TikTok-style interface for educational short-form videos with interactive elem
    npm install
    ```
 
-3. Create a `.env` file:
-   ```env
-   REACT_APP_VIDEO_API_URL=https://api.jsonbin.io/v3/b/YOUR_VIDEO_BIN_ID
-   REACT_APP_TRANSCRIPTION_API_URL=https://api.jsonbin.io/v3/b/YOUR_TRANSCRIPTION_BIN_ID
-   REACT_APP_JSONBIN_API_KEY=your-jsonbin-api-key
-   ```
-
 4. Start the development server:
    ```bash
-   npm start
+   npm run dev
    ```
 
 ## Project Structure 📂
@@ -117,9 +110,3 @@ export const theme = {
 - Optimized re-renders
 
 
-## How to Run:
-cd youverse-reels
-```bash
-cd youverse-reels
-npm run dev
-````
