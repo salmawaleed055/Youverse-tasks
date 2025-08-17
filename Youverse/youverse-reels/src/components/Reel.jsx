@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import VideoPlayer from './VideoPlayer';
 import styled, { keyframes, css } from 'styled-components';
 import { Heart, MessageCircle, Share2, SkipForward, Pause, Play } from "lucide-react";
@@ -30,6 +30,11 @@ const spin = keyframes`
     to { transform: rotate(360deg); }
 `;
 
+const shimmer = keyframes`
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+`;
+
 // ALL Styled Components
 const ReelPageContainer = styled.div`
     position: fixed;
@@ -37,11 +42,12 @@ const ReelPageContainer = styled.div`
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: #000;
+    background: linear-gradient(135deg, #121212 0%, #000000 100%);
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
+    perspective: 1000px;
 `;
 
 const ReelContent = styled.div`
@@ -50,9 +56,29 @@ const ReelContent = styled.div`
     max-width: 450px;
     position: relative;
     background: #000;
+    box-shadow:
+            0 0 60px rgba(0, 173, 181, 0.3),
+            0 0 30px rgba(0, 0, 0, 0.8);
+    border-radius: 0;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+    @media (min-width: 769px) {
+        border-radius: 16px;
+        height: 90vh;
+        max-height: 800px;
+        transform-style: preserve-3d;
+        &:hover {
+            transform: translateY(-5px) rotateX(1deg);
+            box-shadow:
+                    0 0 80px rgba(0, 173, 181, 0.4),
+                    0 0 40px rgba(0, 0, 0, 0.9);
+        }
+    }
 
     @media (max-width: 768px) {
         max-width: 100%;
+        border-radius: 0;
     }
 `;
 
@@ -60,13 +86,27 @@ const VideoWrapper = styled.div`
     width: 100%;
     height: 100%;
     position: relative;
-    background: #000;
-    border-radius: 0;
+    background: linear-gradient(45deg, #0f0f0f, #1a1a1a);
     overflow: hidden;
     cursor: pointer;
+    touch-action: manipulation;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-    @media (min-width: 769px) {
-        border-radius: 20px;
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+                circle at center,
+                transparent 0%,
+                rgba(0, 0, 0, 0.7) 100%
+        );
+        z-index: 1;
     }
 `;
 
@@ -79,6 +119,7 @@ const InfoOverlay = styled.div`
     background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.7) 50%, transparent);
     z-index: 10;
     animation: ${slideUp} 0.5s ease-out;
+    pointer-events: none;
 `;
 
 const CreatorInfo = styled.div`
@@ -86,6 +127,7 @@ const CreatorInfo = styled.div`
     align-items: center;
     margin-bottom: 15px;
     animation: ${fadeIn} 0.6s ease-out;
+    pointer-events: auto;
 `;
 
 const CreatorImage = styled.img`
@@ -96,6 +138,11 @@ const CreatorImage = styled.img`
     margin-right: 12px;
     object-fit: cover;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease;
+
+    &:hover {
+        transform: scale(1.1);
+    }
 `;
 
 const CreatorDetails = styled.div`
@@ -125,6 +172,12 @@ const Badge = styled.span`
     font-size: 0.75rem;
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+    }
 `;
 
 const TranscriptionText = styled.p`
@@ -136,6 +189,12 @@ const TranscriptionText = styled.p`
     animation: ${fadeIn} 0.8s ease-out;
     animation-delay: 0.2s;
     animation-fill-mode: both;
+    background: linear-gradient(90deg, #fff, #ddd);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 100%;
+    animation: ${shimmer} 8s linear infinite;
 `;
 
 const InteractionPanel = styled.div`
@@ -174,16 +233,16 @@ const InteractionButton = styled.button`
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    
+
     &:active {
         animation: ${pulse} 0.3s ease-out;
     }
-    
+
     &:hover {
         background: rgba(255, 255, 255, 0.2);
         transform: scale(1.1);
     }
-    
+
     ${props => props.liked && css`
         background: rgba(255, 20, 80, 0.2);
         border-color: #ff1450;
@@ -241,6 +300,8 @@ const ErrorOverlay = styled.div`
     padding: 20px;
     border-radius: 10px;
     z-index: 15;
+    animation: ${fadeIn} 0.3s ease-out;
+    max-width: 80%;
 `;
 
 const ErrorText = styled.div`
@@ -252,19 +313,19 @@ const ErrorSubtext = styled.div`
     font-size: 0.9rem;
     opacity: 0.7;
 `;
-
-const LoadingOverlay = styled.div`
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    color: white;
-    z-index: 15;
-`;
+//
+// const LoadingOverlay = styled.div`
+//     position: absolute;
+//     top: 50%;
+//     left: 50%;
+//     transform: translate(-50%, -50%);
+//     display: flex;
+//     flex-direction: column;
+//     align-items: center;
+//     gap: 15px;
+//     color: white;
+//     z-index: 15;
+// `;
 
 const LoadingSpinner = styled.div`
     width: 40px;
@@ -290,6 +351,36 @@ const VideoCounter = styled.div`
     border-radius: 15px;
     font-size: 0.8rem;
     backdrop-filter: blur(10px);
+    z-index: 10;
+`;
+
+const SkipButton = styled.button`
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    &::after {
+        content: '→';
+    }
 `;
 
 // Main Component
@@ -303,6 +394,7 @@ const Reel = ({ videoData, transcription, onNext, videoUrl, currentIndex = 0, to
     const [showPauseIcon, setShowPauseIcon] = useState(false);
     const [videoError, setVideoError] = useState(false);
     const [isVideoReady, setIsVideoReady] = useState(false);
+    const [isDoubleTap, setIsDoubleTap] = useState(false);
 
     // Reset states when video changes
     useEffect(() => {
@@ -310,12 +402,8 @@ const Reel = ({ videoData, transcription, onNext, videoUrl, currentIndex = 0, to
         setShowPauseIcon(false);
         setVideoError(false);
         setIsVideoReady(false);
-
-        // Reset interaction states for new video
         setLiked(false);
         setLikes(Math.floor(Math.random() * 1000) + 100);
-
-        console.log('Video changed, resetting states');
     }, [videoUrl, currentIndex]);
 
     const handleLike = useCallback(() => {
@@ -328,108 +416,104 @@ const Reel = ({ videoData, transcription, onNext, videoUrl, currentIndex = 0, to
         }
     }, [liked]);
 
+    const handleDoubleTap = useCallback(() => {
+        if (!liked) {
+            handleLike();
+            setIsDoubleTap(true);
+            setTimeout(() => setIsDoubleTap(false), 1000);
+        }
+    }, [liked, handleLike]);
+
     const handleComment = useCallback(() => {
         console.log('Comment clicked for video:', videoData?.id);
         alert('Comments feature coming soon!');
     }, [videoData?.id]);
 
     const handleShare = useCallback(async () => {
-        const shareData = {
-            title: videoData?.title || `${videoData?.creatorName || 'Creator'}'s Educational Reel`,
-            text: transcription,
-            url: window.location.href,
-        };
-
         try {
-            if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            const shareData = {
+                title: videoData?.title || `${videoData?.creatorName || 'Creator'}'s Educational Reel`,
+                text: transcription,
+                url: window.location.href,
+            };
+
+            if (navigator.share && navigator.canShare?.(shareData)) {
                 await navigator.share(shareData);
             } else {
                 await navigator.clipboard.writeText(window.location.href);
                 alert('Link copied to clipboard!');
             }
         } catch (err) {
-            console.log('Share failed:', err);
-            alert('Sharing not available');
+            console.error('Share failed:', err);
+            await navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
         }
     }, [videoData, transcription]);
 
     const handleVideoClick = useCallback(() => {
-        const newPlayingState = !isPlaying;
-        setIsPlaying(newPlayingState);
+        setIsPlaying(prev => !prev);
         setShowPauseIcon(true);
-
         setTimeout(() => setShowPauseIcon(false), 800);
-
-        console.log(`Video ${newPlayingState ? 'resumed' : 'paused'}`);
-    }, [isPlaying]);
+    }, []);
 
     const handleVideoReady = useCallback(() => {
         setIsVideoReady(true);
         setVideoError(false);
-        console.log('Video is ready to play');
     }, []);
 
     const handleVideoError = useCallback(() => {
         setVideoError(true);
-        console.error('Video failed to load:', videoUrl);
-
-        // Auto-skip to next video after 3 seconds
-        setTimeout(() => {
-            console.log('Auto-skipping due to video error');
-            onNext();
-        }, 3000);
-    }, [videoUrl, onNext]);
+        setTimeout(() => onNext(), 3000);
+    }, [onNext]);
 
     const handleVideoEnd = useCallback(() => {
-        console.log('Video ended, moving to next');
         onNext();
     }, [onNext]);
 
-    // Format numbers (1000 -> 1k, 1000000 -> 1M)
-    const formatCount = (count) => {
-        if (count >= 1000000) {
-            return (count / 1000000).toFixed(1) + 'M';
-        }
-        if (count >= 1000) {
-            return (count / 1000).toFixed(1) + 'k';
-        }
+    const formatCount = useCallback((count) => {
+        if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
+        if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
         return count.toString();
-    };
+    }, []);
 
-    // Validate video data
-    const safeVideoData = {
+    const safeVideoData = useMemo(() => ({
         id: videoData?.id || 'unknown',
         title: videoData?.title || 'Educational Video',
-        creatorName: videoData?.creatorName || 'Unknown Creator',
+        // creatorName: videoData?.creatorName || 'Unknown Creator',
         creatorPicture: videoData?.creatorPicture,
         category: videoData?.category || 'Education',
         subcategory: videoData?.subcategory,
         skillLabel: videoData?.skillLabel,
         ...videoData
-    };
+    }), [videoData]);
 
-    const safeTranscription = transcription || "Discover amazing educational content in this video.";
+    const safeTranscription = useMemo(() =>
+            transcription || "Discover amazing educational content in this video.",
+        [transcription]
+    );
 
-    console.log('Rendering Reel:', {
-        videoUrl,
-        currentIndex,
-        totalVideos,
-        isPlaying,
-        isVideoReady,
-        videoError,
-        videoData: safeVideoData
-    });
+    const creatorAvatar = useMemo(() =>
+            safeVideoData.creatorPicture ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(safeVideoData.creatorName)}&background=5865F2&color=fff&bold=true`,
+        [safeVideoData]
+    );
 
     return (
         <ReelPageContainer>
             <ReelContent>
-                <VideoWrapper onClick={handleVideoClick}>
+                <VideoWrapper
+                    onClick={handleVideoClick}
+                    onDoubleClick={handleDoubleTap}
+                >
                     <VideoPlayer
                         key={`video-${currentIndex}-${safeVideoData.id}`}
                         url={videoUrl}
                         isPlaying={isPlaying}
                         onNext={handleVideoEnd}
-                        muted={true}
+                        muted={false} // Changed from true to false
+                        onReady={handleVideoReady}
+                        onError={handleVideoError}
+                        showLoading={false} // Add this prop
                     />
 
                     <PauseOverlay show={(!isPlaying && isVideoReady) || showPauseIcon}>
@@ -443,18 +527,30 @@ const Reel = ({ videoData, transcription, onNext, videoUrl, currentIndex = 0, to
                         </ErrorOverlay>
                     )}
 
-                    {!isVideoReady && !videoError && (
-                        <LoadingOverlay>
-                            {/*<LoadingSpinner />*/}
-                            {/*<LoadingText>Loading...</LoadingText>*/}
-                        </LoadingOverlay>
+                    {/*{!isVideoReady && !videoError && (*/}
+                    {/*    // <LoadingOverlay>*/}
+                    {/*    //     <LoadingSpinner />*/}
+                    {/*    //     <LoadingText>Loading video...</LoadingText>*/}
+                    {/*    // </LoadingOverlay>*/}
+                    {/*)}*/}
+
+                    {isDoubleTap && (
+                        <HeartBurst style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '150px',
+                            height: '150px',
+                            zIndex: 20
+                        }} />
                     )}
                 </VideoWrapper>
 
                 <InfoOverlay>
                     <CreatorInfo>
                         <CreatorImage
-                            src={safeVideoData.creatorPicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(safeVideoData.creatorName)}&background=5865F2&color=fff&bold=true`}
+                            src={creatorAvatar}
                             alt={safeVideoData.creatorName}
                             onError={(e) => {
                                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(safeVideoData.creatorName)}&background=5865F2&color=fff&bold=true`;
@@ -484,7 +580,7 @@ const Reel = ({ videoData, transcription, onNext, videoUrl, currentIndex = 0, to
                             aria-label="Like video"
                         >
                             {showHeartBurst && <HeartBurst />}
-                            <Heart size={26} fill={liked ? "#fff" : "none"} />
+                            <Heart size={26} fill={liked ? "#ff1450" : "none"} />
                         </InteractionButton>
                         <InteractionCount>{formatCount(likes)}</InteractionCount>
                     </InteractionItem>
@@ -518,6 +614,10 @@ const Reel = ({ videoData, transcription, onNext, videoUrl, currentIndex = 0, to
                         </InteractionButton>
                     </InteractionItem>
                 </InteractionPanel>
+
+                <SkipButton onClick={onNext}>
+                    Skip
+                </SkipButton>
             </ReelContent>
         </ReelPageContainer>
     );

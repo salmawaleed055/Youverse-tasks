@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Reel from './Reel';
 import styled, { keyframes } from 'styled-components';
-function extractEmbedUrl(url, start, end) {
-    const regex = /(?:youtube\.com\/.*v=|youtu\.be\/)([^&]+)/;
-    const match = url.match(regex);
-    const videoId = match ? match[1] : null;
-    if (!videoId) return url;
-    return `https://www.youtube.com/embed/${videoId}?start=${start}&end=${end}&autoplay=1&mute=1&controls=0`;
-}
+// function extractEmbedUrl(url, start, end) {
+//     const regex = /(?:youtube\.com\/.*v=|youtu\.be\/)([^&]+)/;
+//     const match = url.match(regex);
+//     const videoId = match ? match[1] : null;
+//     if (!videoId) return url;
+//     return `https://www.youtube.com/embed/${videoId}?start=${start}&end=${end}&autoplay=1&mute=1&controls=0`;
+// }
 // API URLs
 const VIDEO_API_URL = 'https://api.jsonbin.io/v3/b/689b3a9cae596e708fc82c19/latest?meta=false';
 const TRANSCRIPTION_API_URL = 'https://api.jsonbin.io/v3/b/689b3ab243b1c97be91c75da/latest?meta=false';
@@ -122,7 +122,7 @@ const ReelsPage = () => {
                 category: video.category || 'General',
                 subcategory: video.subcategory || 'Learning',
                 skillLabel: video.skillLabel || video.skill || 'Educational',
-                creatorName: video.creatorName || video.creator || 'Unknown Creator',
+                // creatorName: video.creatorName || video.creator || 'Unknown Creator',
                 creatorPicture: video.creatorPicture || video.avatar || '/default-avatar.png'
             }));
 
