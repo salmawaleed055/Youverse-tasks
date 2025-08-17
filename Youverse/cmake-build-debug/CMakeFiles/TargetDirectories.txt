@@ -1,0 +1,3 @@
+D:/Youverse/cmake-build-debug/CMakeFiles/Youverse.dir
+D:/Youverse/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/Youverse/cmake-build-debug/CMakeFiles/rebuild_cache.dir
