@@ -5,18 +5,16 @@ A TikTok-style interface for educational short-form videos with interactive elem
 
 <img width="1912" height="972" alt="image" src="https://github.com/user-attachments/assets/fb2fbd9e-13b2-4c20-9e8a-3f25b0b2fc6e" />
 
-## Features ✨
+## Features 
 
-- 🎥 Short-form video player optimized for educational content
-- ♥️ Interactive engagement features (likes, shares, comments)
-- 🔄 Seamless video transitions
-- 📝 Dynamic transcriptions display
-- 🏷️ Category tagging system
-- 📱 Fully responsive mobile-first design
-- 🎨 Beautiful animations and visual effects
-- ⚡ Optimized performance with React memoization
+- Short-form video player optimized for educational content
+- Interactive engagement features (likes, shares, comments)
+- Seamless video transitions
+- Dynamic transcriptions display
+- animations and visual effects
+- Optimized performance with React memoization
 
-## Tech Stack 🛠️
+## Tech Stack 
 
 **Frontend:**
 - React 18 with Hooks
@@ -27,7 +25,7 @@ A TikTok-style interface for educational short-form videos with interactive elem
 **API:**
 - JSONBin.io for video metadata storage
 
-## Installation 💻
+## Installation 
 
 1. Clone the repository:
    ```bash
@@ -96,7 +94,7 @@ src/
 }
 ```
 
-## Customization 🎨
+## Customization 
 
 **Theming:**
 Modify colors in `src/styles/theme.js`:
@@ -110,7 +108,7 @@ export const theme = {
 };
 ````
 
-## Performance Optimizations ⚡
+## Performance Optimizations 
 
 - React.memo for component memoization
 - useCallback for stable function references
