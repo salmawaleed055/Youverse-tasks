@@ -119,4 +119,9 @@ export const theme = {
 - Optimized re-renders
 
 
-
+## How to Run:
+cd youverse-reels
+```bash
+cd youverse-reels
+npm run dev
+````
