@@ -51,6 +51,10 @@ src/
 │   ├── Reel.jsx/               # Main reel component
 │   ├── VideoPlayer.jsz/        # Video player with controls
 │   └── Reelspage.jsx/            #  Main page container
+├── Hooks/
+│   └── useData.jsx/            #  Main page container
+├── Services/
+│   └── Api.js/            #  Main page container
 ├── App.js
 └── index.js
 ```
